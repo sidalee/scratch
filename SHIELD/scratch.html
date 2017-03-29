@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>刮刮乐</title>
+    <style type="text/CSS">
+    #canvas{
+        display: block;
+        margin:0 auto;
+    }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script type="text/javascript">
+    // 初始化，设置canva的宽(width)、高(height),涂抹画笔的直径(r)，背景图片(img)（即底层的图片）,上层遮罩层
+    var width=375;
+    var height=562;
+    var r=50;
+    var img = new Image();
+    img.src="SHIELD.jpg";
+    var canvas=document.getElementById("canvas");
+    canvas.style.backgroundImage='url('+img.src+')';
+    canvas.width=width;
+    canvas.height=height;
+    var ctx=canvas.getContext("2d");
+    ctx.fillStyle="#ccc";
+    ctx.fillRect(0,0,width,height);                    //绘制上层的涂层
+    ctx.globalCompositeOperation="destination-out";    //在源图像外显示目标图像。只有源图像外的目标图像部分会被显示，源图像是透明的。
+    var isMove=false;
+
+    var el=new Array();
+    el.x=canvas.offsetLeft;
+    el.y=canvas.offsetTop;
+  
+    //按下时
+    function touchStart(e){
+        e.preventDefault();
+        isMove=true;
+        ctx.closePath();
+    }
+    // 移动时
+    function touchMove(e){
+        e.preventDefault();
+        var x,y;
+        if(isMove){
+            if(e.targetTouches){                    //移动端
+                var touch=e.targetTouches[0];
+                x=touch.clientX-el.x;                //坐标矫正
+                y=touch.clientY-el.y;
+            }else{                                    //pc端
+                x=e.pageX-el.x;
+                y=e.pageY-el.y;
+            }
+            ctx.beginPath();
+            ctx.arc(x,y,r,0,Math.PI*2);                //绘制笔触
+            ctx.fill();
+            //ctx.closePath();                        //每次闭合路径
+        }
+    }
+    // 离开时
+    function touchEnd(e){
+        e.preventDefault();
+        isMove=false ;
+        ctx.closePath();
+        //涂抹区域百分比
+        var imgData=ctx.getImageData(0,0,width,height);//返回ImageData对象，该对象拷贝画布指定的像素数据
+        var pixles=imgData.data;
+        var transNum=0;
+        //rgba以数组形式储存在imageData中，
+        // r=imgData.data[0];
+        // g=imgData.data[1];
+        // b=imgData.data[2];
+        // a=imgData.data[3];
+        for(var i=3,j=pixles.length;i<j;i+=4){
+            var a=pixles[i];
+            if(a==0){
+                transNum++
+            }
+        }
+        var transPercent=transNum/(pixles.length/4);//透明度比
+        console.log(transPercent);
+        //超过某个值显示所有
+        if(transPercent > 0.5){
+            ctx.fillRect(0,0,width,height);
+        }
+    }
+    // 事件监听
+    canvas.addEventListener("touchstart",touchStart);
+    canvas.addEventListener("mousedown",touchStart);
+    canvas.addEventListener("touchmove",touchMove);
+    canvas.addEventListener("mousemove",touchMove);
+    canvas.addEventListener("touchend",touchEnd);
+    canvas.addEventListener("mouseup",touchEnd);
+    </script>
+</body>
+</html>
